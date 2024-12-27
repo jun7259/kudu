@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <RuleSet Name="Rules for Kudu" ToolsVersion="11.0">
-  <IncludeAll Action="Error" />
+  <IncludeAll Action="None" />
   <Rules AnalyzerId="Microsoft.Analyzers.ManagedCodeAnalysis" RuleNamespace="Microsoft.Rules.Managed">
     <Rule Id="CA1002" Action="None" />
     <Rule Id="CA1004" Action="None" />

@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Threading;
-using System.Threading.Tasks;
-using Kudu.Client.Deployment;
+﻿using Kudu.Client.Deployment;
 using Kudu.Client.Infrastructure;
 using Kudu.Contracts.Settings;
 using Kudu.Contracts.SourceControl;
@@ -17,6 +8,15 @@ using Kudu.SiteManagement.Configuration;
 using Kudu.SiteManagement.Configuration.Section;
 using Kudu.SiteManagement.Context;
 using Microsoft.Web.Administration;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Threading;
+using System.Threading.Tasks;
 using IIS = Microsoft.Web.Administration;
 
 namespace Kudu.SiteManagement
@@ -96,8 +96,26 @@ namespace Kudu.SiteManagement
                 var site = new Site();
                 site.ServiceUrls = GetSiteUrls(serviceSite);
                 site.SiteUrls = GetSiteUrls(mainSite);
+                site.VirtualPaths = GetVirtualPath(mainSite);
                 return site;
             }
+        }
+
+        private static IDictionary<string, string> GetVirtualPath(IIS.Site site)
+        {
+            var result = new Dictionary<string, string>();
+            if (site == null)
+            { return result; }
+
+            if (site.Applications.Count == 1)
+            { return result; }
+
+            for (int i = 1; i < site.Applications.Count; i++)
+            {
+                result.Add(site.Applications[i].Path, site.Applications[i].VirtualDirectories[0].PhysicalPath.Replace(site.Applications[0].VirtualDirectories[0].PhysicalPath, "").TrimStart('\\'));
+            }
+
+            return result;
         }
 
         private static List<string> GetSiteUrls(IIS.Site site)
@@ -532,7 +550,6 @@ namespace Kudu.SiteManagement
                 {
                     site.Bindings.First().SetAttributeValue("sslFlags", SslFlags.Sni);
                 }
-
                 //Note: Add the rest of the bindings normally.
                 foreach (BindingInformation binding in bindings.Skip(1))
                 {
@@ -693,6 +710,120 @@ namespace Kudu.SiteManagement
                 {
                     response.EnsureSuccessStatusCode();
                 }
+            }
+        }
+
+        public bool AddVirtualApplication(string applicationName, string virutalPath, string physicalPath)
+        {
+            try
+            {
+                using (ServerManager iis = GetServerManager())
+                {
+                    IIS.Site site = iis.Sites[GetLiveSite(applicationName)];
+
+                    if (site == null)
+                    {
+                        return true;
+                    }
+
+                    var app = site.Applications.FirstOrDefault(x => x.Path == virutalPath);
+
+                    if (app != null)
+                    {
+                        return true;
+                    }
+
+                    var fullPhysicalPath = Path.Combine(site.Applications[0].VirtualDirectories[0].PhysicalPath, physicalPath);
+
+                    if (!Directory.Exists(fullPhysicalPath))
+                    {
+                        Directory.CreateDirectory(fullPhysicalPath);
+                    }
+                    site.Applications.Add(virutalPath, fullPhysicalPath);
+
+                    iis.CommitChanges();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return false;
+            }
+        }
+
+        public bool SetVirtualApplication(string applicationName, IDictionary<string, string> virtualApplications)
+        {
+            try
+            {
+                using (ServerManager iis = GetServerManager())
+                {
+                    IIS.Site site = iis.Sites[GetLiveSite(applicationName)];
+
+                    if (site == null)
+                    {
+                        return true;
+                    }
+
+                    for (int i = 1; i < site.Applications.Count; i++)
+                    {
+                        RemoveVirtualApplication(applicationName, site.Applications[i].Path);
+                    }
+
+
+                    foreach (var item in virtualApplications)
+                    {
+                        AddVirtualApplication(applicationName, item.Key, item.Value);
+                    }
+
+                    iis.CommitChanges();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return false;
+            }
+        }
+
+        public bool RemoveVirtualApplication(string applicationName, string virutalPath)
+        {
+            try
+            {
+                using (ServerManager iis = GetServerManager())
+                {
+                    IIS.Site site = iis.Sites[GetLiveSite(applicationName)];
+
+                    if (site == null)
+                    {
+                        return true;
+                    }
+
+                    var app = site.Applications.FirstOrDefault(x => x.Path == virutalPath);
+
+                    if (app == null)
+                    {
+                        return true;
+                    }
+
+                    var physicalPath = app.VirtualDirectories[0].PhysicalPath;
+
+                    if (Directory.Exists(physicalPath))
+                    {
+                        Directory.Delete(physicalPath);
+                    }
+
+                    site.Applications.Remove(app);
+
+                    iis.CommitChanges();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return false;
             }
         }
     }

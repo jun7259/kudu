@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Kudu.Web.Models
 {
@@ -10,5 +9,6 @@ namespace Kudu.Web.Models
         string SiteUrl { get; }
         IList<string> SiteUrls { get; set; }
         IList<string> ServiceUrls { get; set; }
+        IDictionary<string, string> VirtualPaths { get; set; }
     }
 }

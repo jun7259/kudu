@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Kudu.SiteManagement;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Kudu.SiteManagement;
 
 namespace Kudu.Web.Models
 {
@@ -54,7 +54,8 @@ namespace Kudu.Web.Models
             {
                 Name = name,
                 SiteUrls = site.SiteUrls,
-                ServiceUrls = site.ServiceUrls
+                ServiceUrls = site.ServiceUrls,
+                VirtualPaths = site.VirtualPaths
             };
         }
 
@@ -90,6 +91,39 @@ namespace Kudu.Web.Models
 
             return _siteManager.AddSiteBinding(name, binding);
         }
+
+        public bool AddVirtualApplication(string name, string virutalPath, string physicalPath)
+        {
+            var application = GetApplication(name);
+            if (application == null)
+            {
+                return false;
+            }
+
+            return _siteManager.AddVirtualApplication(name, virutalPath, physicalPath);
+        }
+
+        public bool SetVirtualApplication(string name, IDictionary<string, string> virtualApplications)
+        {
+            var application = GetApplication(name);
+            if (application == null)
+            {
+                return false;
+            }
+
+            return _siteManager.SetVirtualApplication(name, virtualApplications);
+        }
+
+        public bool RemoveVirtualApplication(string name, string virutalPath)
+        {
+            var application = GetApplication(name);
+            if (application == null)
+            {
+                return false;
+            }
+
+            return _siteManager.RemoveVirtualApplication(name, virutalPath);
+        }
     }
 
     public class SiteExistsException : InvalidOperationException
@@ -102,5 +136,5 @@ namespace Kudu.Web.Models
 
 
 
-    
+
 }

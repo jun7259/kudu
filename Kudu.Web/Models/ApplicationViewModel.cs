@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Kudu.Core.Deployment;
+using Kudu.Core.SourceControl;
+using Kudu.SiteManagement.Certificates;
+using Kudu.SiteManagement.Context;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Mvc;
-using Kudu.Core.Deployment;
-using Kudu.Core.SourceControl;
-using Kudu.SiteManagement;
-using Kudu.SiteManagement.Certificates;
-using Kudu.SiteManagement.Configuration;
-using Kudu.SiteManagement.Context;
 
 namespace Kudu.Web.Models
 {
@@ -39,11 +37,13 @@ namespace Kudu.Web.Models
                 .Select(cert => new SelectListItem { Text = cert.FriendlyName, Value = cert.Thumbprint })
                 .ToArray();
 
-            IpAddresses = (new[] { new SelectListItem {Text = "All Unassigned", Value = "*", Selected = true } })
+            IpAddresses = (new[] { new SelectListItem { Text = "All Unassigned", Value = "*", Selected = true } })
                 .Union(context.IPAddresses.Select(ip => new SelectListItem { Text = ip, Value = ip }))
                 .ToArray();
 
             SupportsSni = context.IISVersion.Major >= 8;
+
+            VirtualPaths = application.VirtualPaths;
         }
 
         [Required]
@@ -55,6 +55,8 @@ namespace Kudu.Web.Models
         public bool CustomHostNames { get; private set; }
         public RepositoryInfo RepositoryInfo { get; set; }
         public bool SupportsSni { get; set; }
+
+        public IDictionary<string, string> VirtualPaths { get; set; }
 
         public string GitUrl
         {

@@ -1,16 +1,16 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using System.Web.Mvc;
-using Kudu.Client.Infrastructure;
+﻿using Kudu.Client.Infrastructure;
 using Kudu.SiteManagement;
 using Kudu.SiteManagement.Certificates;
-using Kudu.SiteManagement.Configuration;
 using Kudu.SiteManagement.Configuration.Section;
 using Kudu.SiteManagement.Context;
 using Kudu.Web.Infrastructure;
 using Kudu.Web.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace Kudu.Web.Controllers
 {
@@ -25,7 +25,7 @@ namespace Kudu.Web.Controllers
         public ApplicationController(IApplicationService applicationService,
                                      ICredentialProvider credentialProvider,
                                      KuduEnvironment environment,
-                                     IKuduContext context, 
+                                     IKuduContext context,
                                      ICertificateSearcher certificates)
         {
             _applicationService = applicationService;
@@ -106,7 +106,8 @@ namespace Kudu.Web.Controllers
                 return HttpNotFound();
             }
 
-            _applicationService.AddSiteBinding(slug, new KuduBinding {
+            _applicationService.AddSiteBinding(slug, new KuduBinding
+            {
                 Schema = siteSchema.Equals("https://", StringComparison.OrdinalIgnoreCase) ? UriScheme.Https : UriScheme.Http,
                 Ip = siteIp,
                 Port = int.Parse(sitePort),
@@ -146,7 +147,8 @@ namespace Kudu.Web.Controllers
                 return HttpNotFound();
             }
 
-            _applicationService.AddSiteBinding(slug, new KuduBinding {
+            _applicationService.AddSiteBinding(slug, new KuduBinding
+            {
                 Schema = siteSchema.Equals("https://", StringComparison.OrdinalIgnoreCase) ? UriScheme.Https : UriScheme.Http,
                 Ip = siteIp,
                 Port = int.Parse(sitePort),
@@ -193,5 +195,54 @@ namespace Kudu.Web.Controllers
 
             return View(viewName, appViewModel);
         }
+
+        [HttpPost]
+        [ActionName("add-virtual-application")]
+        public async Task<ActionResult> AddVirtualApplication(string slug, string virtualPath, string physicalPath)
+        {
+            IApplication application = _applicationService.GetApplication(slug);
+
+            if (application == null)
+            {
+                return HttpNotFound();
+            }
+
+            _applicationService.AddVirtualApplication(slug, virtualPath, physicalPath);
+
+            return await GetApplicationView("settings", "Details", slug);
+        }
+
+        [HttpPost]
+        [ActionName("set-virtual-application")]
+        public async Task<ActionResult> SetVirtualApplication(string slug, IDictionary<string, string> virtualapp)
+        {
+            IApplication application = _applicationService.GetApplication(slug);
+
+            if (application == null)
+            {
+                return HttpNotFound();
+            }
+
+            _applicationService.SetVirtualApplication(slug, virtualapp);
+
+            return await GetApplicationView("settings", "Details", slug);
+        }
+
+        [HttpPost]
+        [ActionName("remove-virtual-application")]
+        public async Task<ActionResult> RemoveVirtualApplication(string slug, string virtualPath)
+        {
+            IApplication application = _applicationService.GetApplication(slug);
+
+            if (application == null)
+            {
+                return HttpNotFound();
+            }
+
+            _applicationService.RemoveVirtualApplication(slug, virtualPath);
+
+            return await GetApplicationView("settings", "Details", slug);
+        }
+
     }
 }

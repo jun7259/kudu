@@ -10,17 +10,19 @@
 
 <div class="well">
     <h1>Applications</h1>
-    @foreach (var item in Model)
-    {
-        <p>
-            @using (Html.BeginForm("Delete", "Application", new { slug = item.GenerateSlug() }))
-            {
-                <button type="submit" class="plain"><i class="glyphicon glyphicon-remove"></i></button>
-                <a href="@Url.RouteUrl("ApplicationDetails", new { slug = item })" class="site-item">
-                    <i class="glyphicon glyphicon-th-list"></i>
-                    @item
-                </a>
-            }
-        </p>
-    }
+    <ul class="list-group">
+        @foreach (var item in Model)
+        {
+            <li class="list-group-item">
+                @using (Html.BeginForm("Delete", "Application", new { slug = item.GenerateSlug() }))
+                {
+                    <button type="submit" class="plain"><i class="glyphicon glyphicon-remove"></i></button>
+                    <a href="@Url.RouteUrl("ApplicationDetails", new { slug = item })" class="site-item">
+                        <i class="glyphicon glyphicon-th-list"></i>
+                        @item
+                    </a>
+                }
+            </li>
+        }
+    </ul>
 </div>

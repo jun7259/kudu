@@ -28,6 +28,11 @@
 </div>
 
 <script type="text/javascript">
+    function removeVirtualPath(key, element) {
+        if (confirm('Remove the following Path mapping: ' + key)) {
+            $(element).val(key).closest('form').submit();
+        }
+    }
     //Note: Would be so nice with a proper frontend framework like, EmberJS, AngularJS or React!
     function removeBinding(binding, element) {
         if (confirm('Remove the following site binding: ' + binding)) {
@@ -125,12 +130,85 @@
     }
 </script>
 
+@helper AddVirtualApplicationForm(string name, string action, string controller)
+{
+    //Note: Lets mimic the entire IIS dialog instead so it is more familiar to IIS administrators.
+    using (Html.BeginForm(action, controller, new { slug = Model.Name.GenerateSlug() }, FormMethod.Post))
+    {
+        <label class="control-label"><strong>Add virtual application</strong></label>
+        @Html.ValidationSummary()
+
+        <div class="row">
+            <div class="span2">
+                <label class="control-label">Virtaul path:</label>
+                @Html.TextBox("virtualPath", ViewData["Key"], new { id = name + "SiteSchema", style = "width: 100%;", @class = "form-control" })
+            </div>
+            <div class="span4">
+                <label class="control-label">Physical path:</label>
+                @Html.TextBox("physicalPath", ViewData["Value"], new { style = "width: 100%", id = name + "SiteIp", @class = "form-control" })
+            </div>
+        </div>
+        <button id="add_virtual_application" type="submit" class="btn btn-primary">Add Virtual Application</button>
+    }
+}
+
+<div class="well">
+    <div class="form-group">
+        <label class="control-label"><strong>Custom Virtual Application</strong></label>
+        <p class="help-block">
+            Create Custom Virtual Application
+        </p>
+
+        @if (Model.VirtualPaths.Any())
+        {
+
+            using (Html.BeginForm("set-virtual-application", "application", new { slug = Model.Name.GenerateSlug() }, FormMethod.Post, new { @class = "form-inline" }))
+            {
+                <table id="custom-virtual-applications" class="table">
+                    <tr>
+                        <th>Virtaul path:</th>
+                        <th>Physical path:</th>
+                        <th></th>
+                    </tr>
+
+                    @{
+                        var i = -1;
+                        foreach (var setting in Model.VirtualPaths)
+                        {
+                            i++;
+                            <tr>
+                                <td>@Html.TextBox(String.Format("virtualapp[{0}].Key", i), setting.Key, new { @class = "form-control" })</td>
+                                <td>
+                                    @Html.TextBox(String.Format("virtualapp[{0}].Value", i), setting.Value, new { @class = "form-control" })
+                                    @Html.ValidationMessage(String.Format("virtualapp[{0}].Value", i))
+                                </td>
+                                <td><button type="button" class="btn btn-danger" onclick="removeVirtualPath('@setting.Key', '#removevirualapplication') ">Remove</button></td>
+                            </tr>
+                        }
+                    }
+
+                </table>
+                <input type="submit" class="btn btn-primary" value="Save" />
+            }
+
+            using (Html.BeginForm("remove-virtual-application", "Application", new { slug = Model.Name.GenerateSlug() }, FormMethod.Post, new { id = "remove-virtual-application-form" }))
+            {
+                @Html.Hidden("virtualPath", "", new { id = "removevirualapplication" })
+            }
+
+        }
+
+        @AddVirtualApplicationForm("app", "add-virtual-application", "Application")
+
+    </div>
+</div>
+
 @helper AddBindingForm(string name, string action, string controller)
 {
     //Note: Lets mimic the entire IIS dialog instead so it is more familiar to IIS administrators.
     using (Html.BeginForm(action, controller, new { slug = Model.Name.GenerateSlug() }, FormMethod.Post))
     {
-        <label class="control-label"><strong>Add binding</strong></label>           
+        <label class="control-label"><strong>Add binding</strong></label>
         @Html.ValidationSummary()
 
         <div class="row">
@@ -183,8 +261,8 @@
         <div class="form-group">
             <label class="control-label"><strong>Custom Application Site Bindings</strong></label>
             <p class="help-block">
-            Specify additional site bindings for the service site.  Can be of the format 'hostname', 'hostname:port', 'example.org' or 'example.org:port'.
-        </p>
+                Specify additional site bindings for the service site.  Can be of the format 'hostname', 'hostname:port', 'example.org' or 'example.org:port'.
+            </p>
             <p class="help-block">
                 Protocol is limited to http only and all bindings entered will be set to http.
             </p>
@@ -202,7 +280,7 @@
                     @foreach (string siteBinding in Model.SiteUrls.Skip(1))
                     {
                         var uri = new Uri(siteBinding);
-                        
+
                         <tr>
                             <td>@uri.Scheme</td>
                             <td><a href="@uri.AbsoluteUri">@uri.Host</a></td>
@@ -214,28 +292,28 @@
                     }
 
                 </table>
-                
-                    using (Html.BeginForm("remove-custom-site-binding", "Application", new { slug = Model.Name.GenerateSlug() }, FormMethod.Post, new { id = "remove-site-binding-form" }))
-                    {
+
+                using (Html.BeginForm("remove-custom-site-binding", "Application", new { slug = Model.Name.GenerateSlug() }, FormMethod.Post, new { id = "remove-site-binding-form" }))
+                {
                     @Html.Hidden("siteBinding", "", new { id = "removesitebinding" })
-                    }
+                }
 
             }
-            
+
             @AddBindingForm("app", "add-custom-site-binding", "Application")
 
         </div>
     </div>
-    
+
     <div class="well">
         <div class="form-group">
             <label class="control-label"><strong>Custom Service Site Bindings</strong></label>
-            
+
             <p class="help-block">
-            Specify additional site bindings for the service site.  Can be of the format 'hostname', 'hostname:port', 'example.org' or 'example.org:port'.
-        </p>
+                Specify additional site bindings for the service site.  Can be of the format 'hostname', 'hostname:port', 'example.org' or 'example.org:port'.
+            </p>
             <p class="help-block">
-            Protocol is limited to http only and all bindings entered will be set to http.
+                Protocol is limited to http only and all bindings entered will be set to http.
             </p>
 
             @if (Model.ServiceUrls.Any())
@@ -251,7 +329,7 @@
                     @foreach (string siteBinding in Model.ServiceUrls.Skip(1))
                     {
                         var uri = new Uri(siteBinding);
-                        
+
                         <tr>
                             <td>@uri.Scheme</td>
                             <td><a href="@uri.AbsoluteUri">@uri.Host</a></td>
@@ -263,13 +341,13 @@
                     }
 
                 </table>
-                
+
                 using (Html.BeginForm("remove-service-site-binding", "Application", new { slug = Model.Name.GenerateSlug() }, FormMethod.Post, new { id = "remove-site-binding-form" }))
                 {
                     @Html.Hidden("siteBinding", "", new { id = "removeservicebinding" })
                 }
             }
-            
+
             @AddBindingForm("scm", "add-service-site-binding", "Application")
 
         </div>
@@ -277,6 +355,6 @@
 }
 
 @using (Html.BeginForm("Delete", "Application", new { slug = Model.Name.GenerateSlug() }))
-{ 
+{
     <input type="submit" class="btn btn-danger" name="name" value="Delete Application" />
 }

@@ -25,5 +25,6 @@ namespace Kudu.SiteManagement
         }
         public IList<string> SiteUrls { get; set; }
         public IList<string> ServiceUrls { get; set; }
+        public IDictionary<string, string> VirtualPaths { get; set; }
     }
 }
