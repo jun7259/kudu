@@ -1,8 +1,6 @@
-﻿using System.Data.Entity;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Web.Mvc;
 using System.Web.Routing;
-using Kudu.Web.Models;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Kudu.Web
 {
@@ -41,6 +39,18 @@ namespace Kudu.Web
             routes.MapRoute("ApplicationCreate",
                             "application/create",
                             new { controller = "Application", action = "Create" });
+
+            routes.MapRoute("CreateProject",
+                            "application/createproject",
+                            new { controller = "Application", action = "CreateProject" });
+
+            routes.MapRoute("UpdateProject",
+                            "application/updateproject",
+                            new { controller = "Application", action = "UpdateProject" });
+
+            routes.MapRoute("DeleteProject",
+                            "application/deleteproject",
+                            new { controller = "Application", action = "DeleteProject" });
 
             routes.MapRoute("ApplicationDetails",
                             "application/{slug}",

@@ -55,6 +55,111 @@ namespace Kudu.Web.Controllers
             return GetApplicationView("settings", "Details", slug);
         }
 
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<JsonResult> CreateProject(string name, IDictionary<string, string> modulePaths)
+        {
+            string slug = name.GenerateSlug();
+            try
+            {
+                await _applicationService.AddApplication(slug);
+                _applicationService.SetVirtualApplication(slug, modulePaths);
+                var application = _applicationService.GetApplication(slug);
+                ICredentials credentials = _credentialProvider.GetCredentials();
+                var repositoryInfo = await application.GetRepositoryInfo(credentials);
+                var gitUrl = "";
+                if (repositoryInfo != null) gitUrl = repositoryInfo.GitUrl.ToString();
+                return Json(new
+                {
+                    Data = new
+                    {
+                        Name = application.Name,
+                        ServiceUrl = application.ServiceUrl,
+                        SiteUrl = application.SiteUrl,
+                        gitUrl = gitUrl
+                    },
+                    Message = "",
+                });
+            }
+            catch (SiteExistsException)
+            {
+                return Json(new
+                {
+                    Mesaage = "Site already exists",
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    Mesaage = ex.Message,
+                });
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public JsonResult UpdateProject(string name, IDictionary<string, string> modulePaths)
+        {
+            try
+            {
+                IApplication application = _applicationService.GetApplication(name);
+
+                if (application == null)
+                {
+                    return Json(
+                        new { Mesaage = "Site not found" }
+                        );
+                }
+
+                _applicationService.SetVirtualApplication(name, modulePaths);
+
+                return Json(new
+                {
+                    Data = application,
+                    Message = "",
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    Mesaage = ex.Message,
+                });
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<JsonResult> DeleteProject(string name)
+        {
+            try
+            {
+                IApplication application = _applicationService.GetApplication(name);
+
+                if (application == null)
+                {
+                    return Json(
+                        new { Mesaage = "Site not found" }
+                        );
+                }
+
+                await _applicationService.DeleteApplication(name);
+
+                return Json(new
+                {
+                    Message = "",
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    Mesaage = ex.Message,
+                });
+            }
+        }
+
         [HttpGet]
         public ActionResult Create()
         {
